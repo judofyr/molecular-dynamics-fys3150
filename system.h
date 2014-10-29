@@ -39,4 +39,7 @@ public:
     void setIntegrator(Integrator *integrator) { m_integrator = integrator; }
     int steps() { return m_steps; }
     void setSteps(int steps) { m_steps = steps; }
+
+private:
+    void addAtom(double x, double y, double z);
 };

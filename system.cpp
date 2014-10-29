@@ -1,6 +1,7 @@
 #include <system.h>
 #include <integrators/integrator.h>
 #include <potentials/potential.h>
+#include <unitconverter.h>
 
 System::System() :
     m_potential(0),
@@ -38,8 +39,24 @@ void System::resetForcesOnAllAtoms() {
 
 }
 
-void System::createFCCLattice(int numberOfUnitCellsEachDimension, double latticeConstant) {
+void System::addAtom(double x, double y, double z) {
+    Atom *atom = new Atom(UnitConverter::massFromSI(6.63352088e-26)); // Argon mass
+    atom->resetVelocityMaxwellian(UnitConverter::temperatureFromSI(300));
+    atom->position.set(x, y, z);
+    m_atoms.push_back(atom);
+}
 
+void System::createFCCLattice(int numberOfUnitCellsEachDimension, double latticeConstant) {
+    double b = latticeConstant;
+    for (int x_i = 0; x_i < numberOfUnitCellsEachDimension; x_i++) {
+    for (int y_i = 0; y_i < numberOfUnitCellsEachDimension; y_i++) {
+    for (int z_i = 0; z_i < numberOfUnitCellsEachDimension; z_i++) {
+        addAtom(b*x_i + 0,     b*y_i + 0,     b*z_i + 0);
+        addAtom(b*x_i + (b/2), b*y_i + (b/2), b*z_i + 0);
+        addAtom(b*x_i + 0,     b*y_i + (b/2), b*z_i + (b/2));
+        addAtom(b*x_i + (b/2), b*y_i + 0,     b*z_i + (b/2));
+
+    }}}
 }
 
 void System::calculateForces() {
