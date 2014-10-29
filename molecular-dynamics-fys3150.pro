@@ -3,7 +3,7 @@ CONFIG += console
 CONFIG -= app_bundle
 CONFIG -= qt
 INCLUDEPATH +=
-#CONFIG += c++11
+CONFIG += c++11
 
 SOURCES += main.cpp \
     atom.cpp \
