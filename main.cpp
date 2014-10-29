@@ -40,7 +40,8 @@ int main()
         system.step(dt);
         statisticsSampler->sample(&system);
         double energy = system.potential()->potentialEnergy() + statisticsSampler->kineticEnergy();
-        cout << "step=" << timestep << " energy=" << energy << endl;
+        double temp = statisticsSampler->instantaneousTemperature();
+        cout << "step=" << timestep << " energy=" << energy << " temp=" << UnitConverter::temperatureToSI(temp) << endl;
 
 
         movie->saveState(&system);

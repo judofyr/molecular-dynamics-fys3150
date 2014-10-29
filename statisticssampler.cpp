@@ -6,6 +6,11 @@ double StatisticsSampler::kineticEnergy()
     return m_kineticEnergy;
 }
 
+double StatisticsSampler::instantaneousTemperature()
+{
+    return (2.0/3) * m_kineticEnergy / m_numAtoms;
+}
+
 StatisticsSampler::StatisticsSampler()
 {
 
@@ -20,6 +25,7 @@ void StatisticsSampler::sample(System *system)
 {
     // Here you should measure different kinds of statistical properties and save it to a file.
     sampleKineticEnergy(system);
+    m_numAtoms = system->atoms().size();
     // ...
 }
 
