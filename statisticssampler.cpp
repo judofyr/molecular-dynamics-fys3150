@@ -1,5 +1,11 @@
 #include <statisticssampler.h>
 
+
+double StatisticsSampler::kineticEnergy()
+{
+    return m_kineticEnergy;
+}
+
 StatisticsSampler::StatisticsSampler()
 {
 
@@ -19,5 +25,8 @@ void StatisticsSampler::sample(System *system)
 
 void StatisticsSampler::sampleKineticEnergy(System *system)
 {
-
+    m_kineticEnergy = 0;
+    for (auto &atom : system->atoms()) {
+        m_kineticEnergy += 0.5 * atom->mass() * atom->velocity.lengthSquared();
+    }
 }

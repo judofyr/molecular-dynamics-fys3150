@@ -39,6 +39,9 @@ int main()
     for(int timestep=0; timestep<1000; timestep++) {
         system.step(dt);
         statisticsSampler->sample(&system);
+        double energy = system.potential()->potentialEnergy() + statisticsSampler->kineticEnergy();
+        cout << "step=" << timestep << " energy=" << energy << endl;
+
 
         movie->saveState(&system);
     }
