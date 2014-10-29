@@ -19,6 +19,14 @@ System::~System()
 }
 
 void System::applyPeriodicBoundaryConditions() {
+    for (auto &atom : m_atoms) {
+        for (int i = 0; i < 3; i++) {
+            auto pos = &atom->position[i];
+            double size = m_systemSize[i];
+            if (*pos < -size*0.5) *pos += size;
+            if (*pos >= size*0.5) *pos -= size;
+        }
+    }
     // Read here: http://en.wikipedia.org/wiki/Periodic_boundary_conditions#Practical_implementation:_continuity_and_the_minimum_image_convention
 }
 
