@@ -27,6 +27,12 @@ public:
         m_vec[1] += rhs.y()*scalar;
         m_vec[2] += rhs.z()*scalar;
     }
+    void multiply(double scalar) {
+        m_vec[0] *= scalar;
+        m_vec[1] *= scalar;
+        m_vec[2] *= scalar;
+    }
+
     vec3 cross(vec3 &rhs);
     double dot(vec3 &rhs);
     double length();

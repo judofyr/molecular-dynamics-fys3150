@@ -3,6 +3,7 @@
 
 #include <potentials/lennardjones.h>
 #include <integrators/velocityverlet.h>
+#include <thermostats/berendsenthermostat.h>
 #include <system.h>
 #include <statisticssampler.h>
 #include <atom.h>
@@ -31,6 +32,8 @@ int main()
     system.setIntegrator(new VelocityVerlet());
     system.removeMomentum();
 
+    auto thermostat = new BerendsenThermostat(UnitConverter::temperatureFromSI(1000), dt*10);
+
     StatisticsSampler *statisticsSampler = new StatisticsSampler(); //
 
     IO *movie = new IO(); // To write the state to file
@@ -38,13 +41,17 @@ int main()
 
     for(int timestep=0; timestep<1000; timestep++) {
         system.step(dt);
-        statisticsSampler->sample(&system);
+        movie->saveState(&system);
+
+        statisticsSampler->sample(&system, dt);
         double energy = system.potential()->potentialEnergy() + statisticsSampler->kineticEnergy();
         double temp = statisticsSampler->instantaneousTemperature();
         cout << "step=" << timestep << " energy=" << energy << " temp=" << UnitConverter::temperatureToSI(temp) << endl;
 
+        if (timestep > 200 && timestep < 400) {
+            thermostat->adjustTemperature(&system, statisticsSampler);
+        }
 
-        movie->saveState(&system);
     }
 
     movie->close();
