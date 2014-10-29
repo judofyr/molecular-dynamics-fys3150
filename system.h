@@ -26,6 +26,7 @@ public:
     void removeMomentum();
     void calculateForces();
     void step(double dt);
+    vec3 distanceVectorBetweenAtoms(Atom *a, Atom *b);
 
     // Setters and getters
     vector<Atom *> &atoms() { return m_atoms; }

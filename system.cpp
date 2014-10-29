@@ -31,6 +31,18 @@ void System::applyPeriodicBoundaryConditions() {
     // Read here: http://en.wikipedia.org/wiki/Periodic_boundary_conditions#Practical_implementation:_continuity_and_the_minimum_image_convention
 }
 
+vec3 System::distanceVectorBetweenAtoms(Atom *a, Atom *b) {
+    vec3 r;
+    for (int i = 0; i < 3; i++) {
+        double dist = a->position[i] - b->position[i];
+        double size = m_systemSize[i];
+        if (dist >  size*0.5) dist -= size;
+        if (dist < -size*0.5) dist += size;
+        r[i] = dist;
+    }
+    return r;
+}
+
 void System::removeMomentum() {
     vec3 netMomentum;
     for (auto &atom : m_atoms) {
@@ -46,7 +58,9 @@ void System::removeMomentum() {
 }
 
 void System::resetForcesOnAllAtoms() {
-
+    for (auto &atom : m_atoms) {
+        atom->resetForce();
+    }
 }
 
 void System::addAtom(double x, double y, double z) {

@@ -27,7 +27,7 @@ int main()
     int numCells = 5;
     system.setSystemSize(UnitConverter::lengthFromAngstroms(vec3(b*numCells, b*numCells, b*numCells)));
     system.createFCCLattice(numCells, UnitConverter::lengthFromAngstroms(b));
-    system.setPotential(new LennardJones(1.0, 1.0)); // You must insert correct parameters here
+    system.setPotential(new LennardJones(3.405, 1.0)); // You must insert correct parameters here
     system.setIntegrator(new VelocityVerlet());
     system.removeMomentum();
 
