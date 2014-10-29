@@ -2,7 +2,7 @@
 #include <math/random.h>
 
 #include <potentials/lennardjones.h>
-#include <integrators/eulercromer.h>
+#include <integrators/velocityverlet.h>
 #include <system.h>
 #include <statisticssampler.h>
 #include <atom.h>
@@ -28,7 +28,7 @@ int main()
     system.setSystemSize(UnitConverter::lengthFromAngstroms(vec3(b*numCells, b*numCells, b*numCells)));
     system.createFCCLattice(numCells, UnitConverter::lengthFromAngstroms(b));
     system.setPotential(new LennardJones(1.0, 1.0)); // You must insert correct parameters here
-    system.setIntegrator(new EulerCromer());
+    system.setIntegrator(new VelocityVerlet());
     system.removeMomentum();
 
     StatisticsSampler *statisticsSampler = new StatisticsSampler(); //

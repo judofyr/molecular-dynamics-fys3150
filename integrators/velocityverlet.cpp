@@ -21,12 +21,16 @@ void VelocityVerlet::firstKick(System *system, double dt)
 
 void VelocityVerlet::halfKick(System *system, double dt)
 {
-
+    for (auto &atom : system->atoms()) {
+        atom->velocity.addAndMultiply(atom->force, dt/2/atom->mass());
+    }
 }
 
 void VelocityVerlet::move(System *system, double dt)
 {
-
+    for (auto &atom : system->atoms()) {
+        atom->position.addAndMultiply(atom->velocity, dt);
+    }
 }
 
 void VelocityVerlet::integrate(System *system, double dt)
