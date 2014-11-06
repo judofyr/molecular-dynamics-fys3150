@@ -18,8 +18,8 @@ void System::createBlock()
 {
     AtomVec vel;
     AtomBlock block;
-    m_velcoties.push_back(vel);
-    block.velocity = &m_velcoties.back();
+    m_velocities.push_back(vel);
+    block.velocity = &m_velocities.back();
     m_atomBlocks.push_back(block);
 }
 
@@ -91,7 +91,7 @@ void System::createFCCLattice(int numberOfUnitCellsEachDimension, double lattice
     assert(atomCount % ATOMBLOCKSIZE == 0 && "Atoms should be multiple of blocksize");
 
     int requiredBlocks = atomCount / ATOMBLOCKSIZE + 1;
-    m_velcoties.reserve(requiredBlocks);
+    m_velocities.reserve(requiredBlocks);
     m_atomBlocks.reserve(requiredBlocks);
 
     // Create the initial block

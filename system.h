@@ -13,7 +13,7 @@ class System
 private:
     vec3 m_systemSize;
     Atom *m_atom;
-    vector<AtomVec> m_velcoties;
+    vector<AtomVec> m_velocities;
     Potential *m_potential;
     Integrator *m_integrator;
     double m_rCutOff;
