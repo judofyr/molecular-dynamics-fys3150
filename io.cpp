@@ -3,6 +3,8 @@
 #include <atom.h>
 #include <unitconverter.h>
 #include <cstdlib>
+#include "cpelapsedtimer.h"
+
 using std::endl; using std::cout;
 
 IO::IO()
@@ -32,6 +34,7 @@ void IO::close() {
 // This saves the current state to a file following the xyz-standard (see http://en.wikipedia.org/wiki/XYZ_file_format )
 void IO::saveState(System *system, bool withGhosts)
 {
+    CPElapsedTimer::getInstance().disk().start();
     int count = system->atomCount();
 
     if (withGhosts) {
@@ -59,4 +62,6 @@ void IO::saveState(System *system, bool withGhosts)
             file << "Ar " << UnitConverter::lengthToAngstroms(x) << " " << UnitConverter::lengthToAngstroms(y) << " " << UnitConverter::lengthToAngstroms(z) << endl;
         }
     }
+
+    CPElapsedTimer::getInstance().disk().stop();
 }

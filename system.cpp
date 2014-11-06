@@ -3,6 +3,7 @@
 #include <potentials/potential.h>
 #include <unitconverter.h>
 #include <cassert>
+#include "cpelapsedtimer.h"
 
 System::System() :
     m_potential(0),
@@ -110,6 +111,7 @@ void System::createFCCLattice(int numberOfUnitCellsEachDimension, double lattice
 
 void System::applyPeriodicGhostBlocks()
 {
+    CPElapsedTimer::getInstance().createGhosts().start();
     AtomBlock ghostBlock;
     ghostBlock.counter = 0;
 
@@ -170,10 +172,12 @@ void System::applyPeriodicGhostBlocks()
     }
 
     m_ghostBlocks.push_back(ghostBlock);
+    CPElapsedTimer::getInstance().createGhosts().stop();
 }
 
 void System::applyPeriodicBoundaryConditions()
 {
+    CPElapsedTimer::getInstance().periodicBoundaryConditions().start();
     float sizeX = m_systemSize.x();
     float sizeY = m_systemSize.y();
     float sizeZ = m_systemSize.z();
@@ -198,6 +202,8 @@ void System::applyPeriodicBoundaryConditions()
             block.position.z[i] -= sizeZ;
         }
     });
+
+    CPElapsedTimer::getInstance().periodicBoundaryConditions().stop();
 }
 
 size_t System::atomCount()

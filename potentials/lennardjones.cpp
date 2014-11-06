@@ -1,6 +1,7 @@
 #include <potentials/lennardjones.h>
 #include <cmath>
 #include <cassert>
+#include "cpelapsedtimer.h"
 
 LennardJones::LennardJones(double sigma, double epsilon) :
     m_sigma(sigma),
@@ -11,6 +12,7 @@ LennardJones::LennardJones(double sigma, double epsilon) :
 
 void LennardJones::calculateForces(System *system)
 {
+    CPElapsedTimer::getInstance().calculateForces().start();
     m_potentialEnergy = 0;
     float rCut2 = system->rCutOff() * system->rCutOff();
 
@@ -84,4 +86,6 @@ void LennardJones::calculateForces(System *system)
             }
         }
     }
+
+    CPElapsedTimer::getInstance().calculateForces().stop();
 }

@@ -19,7 +19,8 @@ SOURCES += main.cpp \
     integrators/eulercromer.cpp \
     unitconverter.cpp \
     thermostats/berendsenthermostat.cpp \
-    thermostats/thermostat.cpp
+    thermostats/thermostat.cpp \
+    cpelapsedtimer.cpp
 
 HEADERS += \
     atom.h \
@@ -35,5 +36,6 @@ HEADERS += \
     integrators/eulercromer.h \
     unitconverter.h \
     thermostats/thermostat.h \
-    thermostats/berendsenthermostat.h
+    thermostats/berendsenthermostat.h \
+    cpelapsedtimer.h
 

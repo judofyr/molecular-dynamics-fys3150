@@ -1,5 +1,6 @@
 #include <integrators/velocityverlet.h>
 #include <system.h>
+#include "cpelapsedtimer.h"
 
 VelocityVerlet::VelocityVerlet() :
     m_firstStep(true) // This will set the variable m_firstStep to false when the object is created
@@ -21,6 +22,7 @@ void VelocityVerlet::firstKick(System *system, double dt)
 
 void VelocityVerlet::halfKick(System *system, double dt)
 {
+    CPElapsedTimer::getInstance().halfKick().start();
     double dtHalfOverMass = dt * 0.5 / system->atom()->mass();
 
     system->for_each([dtHalfOverMass](AtomBlock &block, int i) {
@@ -28,15 +30,18 @@ void VelocityVerlet::halfKick(System *system, double dt)
         block.velocity->y[i] += block.force.y[i] * dtHalfOverMass;
         block.velocity->z[i] += block.force.z[i] * dtHalfOverMass;
     });
+    CPElapsedTimer::getInstance().halfKick().stop();
 }
 
 void VelocityVerlet::move(System *system, double dt)
 {
+    CPElapsedTimer::getInstance().move().start();
     system->for_each([dt](AtomBlock &block, int i) {
         block.position.x[i] += block.velocity->x[i] * dt;
         block.position.y[i] += block.velocity->y[i] * dt;
         block.position.z[i] += block.velocity->z[i] * dt;
     });
+    CPElapsedTimer::getInstance().move().stop();
 }
 
 void VelocityVerlet::integrate(System *system, double dt)
