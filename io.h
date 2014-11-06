@@ -11,7 +11,7 @@ public:
     IO();
     ~IO();
 
-    void saveState(System *system);
+    void saveState(System *system, bool withGhosts);
     void open(char *filename);
     void close();
 

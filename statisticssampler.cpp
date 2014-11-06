@@ -31,7 +31,7 @@ void StatisticsSampler::sample(System *system, double dt)
 {
     // Here you should measure different kinds of statistical properties and save it to a file.
     sampleKineticEnergy(system);
-    m_numAtoms = system->atoms().size();
+    m_numAtoms = system->atomCount();
     m_dt = dt;
     // ...
 }
@@ -39,7 +39,11 @@ void StatisticsSampler::sample(System *system, double dt)
 void StatisticsSampler::sampleKineticEnergy(System *system)
 {
     m_kineticEnergy = 0;
-    for (auto &atom : system->atoms()) {
-        m_kineticEnergy += 0.5 * atom->mass() * atom->velocity.lengthSquared();
-    }
+    system->for_each([&](AtomBlock &block, int i) {
+        float vx = block.velocity->x[i];
+        float vy = block.velocity->y[i];
+        float vz = block.velocity->z[i];
+        float lensq = vx*vx + vy*vy + vz*vz;
+        m_kineticEnergy += 0.5 * system->atom()->mass() * lensq;
+    });
 }

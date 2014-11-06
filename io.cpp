@@ -30,12 +30,33 @@ void IO::close() {
 }
 
 // This saves the current state to a file following the xyz-standard (see http://en.wikipedia.org/wiki/XYZ_file_format )
-void IO::saveState(System *system)
+void IO::saveState(System *system, bool withGhosts)
 {
-    file << system->atoms().size() << endl;
+    int count = system->atomCount();
+
+    if (withGhosts) {
+        for (auto &block : system->m_ghostBlocks) {
+            count += block.counter;
+        }
+    }
+
+    file << count << endl;
     file << "The is an optional comment line that can be empty." << endl;
-    for(int n=0; n<system->atoms().size(); n++) {
-        Atom *atom = system->atoms()[n];
-        file << "Ar " << UnitConverter::lengthToAngstroms(atom->position.x()) << " " << UnitConverter::lengthToAngstroms(atom->position.y()) << " " << UnitConverter::lengthToAngstroms(atom->position.z()) << endl;
+    system->for_each([&](AtomBlock &block, int i) {
+        float x = block.position.x[i];
+        float y = block.position.y[i];
+        float z = block.position.z[i];
+        file << "Ar " << UnitConverter::lengthToAngstroms(x) << " " << UnitConverter::lengthToAngstroms(y) << " " << UnitConverter::lengthToAngstroms(z) << endl;
+    });
+
+    if (!withGhosts) return;
+
+    for (auto &block : system->m_ghostBlocks) {
+        for (int i = 0; i < block.counter; i++) {
+            float x = block.position.x[i];
+            float y = block.position.y[i];
+            float z = block.position.z[i];
+            file << "Ar " << UnitConverter::lengthToAngstroms(x) << " " << UnitConverter::lengthToAngstroms(y) << " " << UnitConverter::lengthToAngstroms(z) << endl;
+        }
     }
 }

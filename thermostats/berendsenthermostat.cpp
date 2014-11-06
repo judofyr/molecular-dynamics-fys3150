@@ -12,7 +12,9 @@ void BerendsenThermostat::adjustTemperature(System *system, StatisticsSampler *s
     double T = sampler->instantaneousTemperature();
     double gamma = sqrt(1 + scale*(m_T_bath/T - 1));
 
-    for (auto &atom : system->atoms()) {
-        atom->velocity.multiply(gamma);
-    }
+    system->for_each([&](AtomBlock &block, int i){
+        block.velocity->x[i] *= gamma;
+        block.velocity->y[i] *= gamma;
+        block.velocity->z[i] *= gamma;
+    });
 }
