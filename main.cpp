@@ -55,6 +55,12 @@ int main()
             double energy = system.potential()->potentialEnergy() + statisticsSampler->kineticEnergy();
             double temp = statisticsSampler->instantaneousTemperature();
             cout << "step=" << timestep << " energy=" << energy << " temp=" << UnitConverter::temperatureToSI(temp) << endl;
+
+            int neighbourCount = 0;
+            for (auto &block : system.m_atomBlocks) {
+                neighbourCount += block.neighbourCount();
+            }
+            cout << "neighbours=" << neighbourCount << endl;
         }
 
         if (timestep > 200 && timestep < 400) {
@@ -71,8 +77,8 @@ int main()
     float moveFraction = CPElapsedTimer::move().elapsedTime() / CPElapsedTimer::totalTime();
     float createGhostsFraction = CPElapsedTimer::createGhosts().elapsedTime() / CPElapsedTimer::totalTime();
 
-    // float updateNeighborListFraction = CPElapsedTimer::updateNeighborList().elapsedTime() / CPElapsedTimer::totalTime();
-    // float updateCellListFraction = CPElapsedTimer::updateCellList().elapsedTime() / CPElapsedTimer::totalTime();
+    float updateNeighborListFraction = CPElapsedTimer::updateNeighborList().elapsedTime() / CPElapsedTimer::totalTime();
+    float updateCellListFraction = CPElapsedTimer::updateCellList().elapsedTime() / CPElapsedTimer::totalTime();
     float periodicBoundaryConditionsFraction = CPElapsedTimer::periodicBoundaryConditions().elapsedTime() / CPElapsedTimer::totalTime();
     // float samplingFraction = CPElapsedTimer::sampling().elapsedTime() / CPElapsedTimer::totalTime();
     // float timeEvolutionFraction = CPElapsedTimer::timeEvolution().elapsedTime() / CPElapsedTimer::totalTime();
@@ -84,8 +90,8 @@ int main()
          << "      Moving            : " << CPElapsedTimer::move().elapsedTime() << " s ( " << 100*moveFraction << "%)" <<  endl
          << "      Half kick         : " << CPElapsedTimer::halfKick().elapsedTime() << " s ( " << 100*halfKickFraction << "%)" <<  endl
          << "      Create ghosts     : " << CPElapsedTimer::createGhosts().elapsedTime() << " s ( " << 100*createGhostsFraction << "%)" <<  endl
-         //<< "      Update neighbors  : " << CPElapsedTimer::updateNeighborList().elapsedTime() << " s ( " << 100*updateNeighborListFraction << "%)" <<  endl
-         //<< "      Update cells      : " << CPElapsedTimer::updateCellList().elapsedTime() << " s ( " << 100*updateCellListFraction << "%)" <<  endl
+         << "      Update neighbors  : " << CPElapsedTimer::updateNeighborList().elapsedTime() << " s ( " << 100*updateNeighborListFraction << "%)" <<  endl
+         << "      Update cells      : " << CPElapsedTimer::updateCellList().elapsedTime() << " s ( " << 100*updateCellListFraction << "%)" <<  endl
          << "      Periodic boundary : " << CPElapsedTimer::periodicBoundaryConditions().elapsedTime() << " s ( " << 100*periodicBoundaryConditionsFraction << "%)" <<  endl;
          // << "      Sampling          : " << CPElapsedTimer::sampling().elapsedTime() << " s ( " << 100*samplingFraction << "%)" <<  endl;
     cout << endl << numTimeSteps / CPElapsedTimer::totalTime() << " timesteps / second. " << endl;

@@ -16,7 +16,8 @@ void LennardJones::calculateForces(System *system)
     m_potentialEnergy = 0;
     float rCut2 = system->rCutOff() * system->rCutOff();
 
-    auto calculateForce = [&](AtomBlock &block, int i, AtomBlock &otherBlock, int j, bool isGhost) {
+    auto calculateForce = [&](AtomBlock &block, int i, AtomBlock &otherBlock, int j) {
+        assert(block.type == AtomBlockType::REAL);
         float x1 = block.position.x[i];
         float y1 = block.position.y[i];
         float z1 = block.position.z[i];
@@ -44,7 +45,7 @@ void LennardJones::calculateForces(System *system)
         float oneOverDrCut6 = oneOverDrCut2*oneOverDrCut2*oneOverDrCut2;
         float potentialEnergyCutoff = 4*m_epsilon*sigmaSixth*oneOverDrCut6*(sigmaSixth*oneOverDrCut6 - 1);
         float potentialEnergy = 4*m_epsilon*sigmaSixth*oneOverDr6*(sigmaSixth*oneOverDr6 - 1) - potentialEnergyCutoff;
-        if (isGhost) potentialEnergy *= 0.5;
+        if (otherBlock.type == AtomBlockType::GHOST) potentialEnergy *= 0.5;
         m_potentialEnergy += potentialEnergy;
 
         block.force.x[i] += dx * -force;
@@ -55,6 +56,26 @@ void LennardJones::calculateForces(System *system)
         otherBlock.force.z[j] += dz * force;
     };
 
+#define NEIGHBOURS
+
+#ifdef NEIGHBOURS
+    for (auto &block : system->m_atomBlocks) {
+        for (int i = 0; i < ATOMBLOCKSIZE; i++) {
+            for (int j = i+1; j < ATOMBLOCKSIZE; j++) {
+                calculateForce(block, i, block, j);
+            }
+        }
+
+        block.each_neighbour([&](AtomBlock *otherBlock) {
+            for (int i = 0; i < ATOMBLOCKSIZE; i++) {
+                int otherBlockSize = (otherBlock->type == AtomBlockType::GHOST) ? otherBlock->counter : ATOMBLOCKSIZE;
+                for (int j = 0; j < otherBlockSize; j++) {
+                    calculateForce(block, i, *otherBlock, j);
+                }
+            }
+        });
+    }
+#else
     auto &blocks = system->m_atomBlocks;
     auto endBlock = blocks.end();
     auto &ghostBlocks = system->m_ghostBlocks;
@@ -74,18 +95,19 @@ void LennardJones::calculateForces(System *system)
                         break;
                     j = 0;
                 }
-                calculateForce(*block, i, *otherBlock, j, false);
+                calculateForce(*block, i, *otherBlock, j);
                 j++;
             }
 
             // Compare against all ghost atoms
             for (otherBlock = ghostBlocks.begin(); otherBlock != endGhostBlock; otherBlock++) {
                 for (int j = 0; j < otherBlock->counter; j++) {
-                    calculateForce(*block, i, *otherBlock, j, true);
+                    calculateForce(*block, i, *otherBlock, j);
                 }
             }
         }
     }
+#endif
 
     CPElapsedTimer::getInstance().calculateForces().stop();
 }

@@ -14,6 +14,7 @@ private:
     vec3 m_systemSize;
     Atom *m_atom;
     vector<AtomVec> m_velocities;
+    vector<vector<AtomRef>> m_cellLists;
     Potential *m_potential;
     Integrator *m_integrator;
     double m_rCutOff;
@@ -35,6 +36,8 @@ public:
     size_t atomCount();
     void removeMomentum();
     void calculateForces();
+    void buildCellLists();
+    void buildNeighbourLists();
     void step(double dt);
     void for_each(std::function<void(AtomBlock &block, int atomIdx)>);
 

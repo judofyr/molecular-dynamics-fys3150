@@ -3,6 +3,7 @@
 #include <potentials/potential.h>
 #include <unitconverter.h>
 #include <cassert>
+#include <algorithm>
 #include "cpelapsedtimer.h"
 
 System::System() :
@@ -113,7 +114,7 @@ void System::applyPeriodicGhostBlocks()
 {
     CPElapsedTimer::getInstance().createGhosts().start();
     AtomBlock ghostBlock;
-    ghostBlock.counter = 0;
+    ghostBlock.type = AtomBlockType::GHOST;
 
     m_ghostBlocks.clear();
 
@@ -201,6 +202,14 @@ void System::applyPeriodicBoundaryConditions()
         } else if (block.position.z[i] >= sizeZ) {
             block.position.z[i] -= sizeZ;
         }
+
+        assert(block.position.x[i] >= 0);
+        assert(block.position.y[i] >= 0);
+        assert(block.position.z[i] >= 0);
+        assert(block.position.x[i] < sizeX);
+        assert(block.position.y[i] < sizeY);
+        assert(block.position.z[i] < sizeZ);
+
     });
 
     CPElapsedTimer::getInstance().periodicBoundaryConditions().stop();
@@ -214,8 +223,118 @@ size_t System::atomCount()
 void System::calculateForces() {
     applyPeriodicBoundaryConditions();
     applyPeriodicGhostBlocks();
+    buildCellLists();
+    buildNeighbourLists();
     resetForcesOnAllAtoms();
     m_potential->calculateForces(this);
+}
+
+void System::buildCellLists()
+{
+    CPElapsedTimer::getInstance().updateCellList().start();
+
+    m_cellLists.clear();
+
+    // We add 3 extra cells in each dimension: one for each side, and one for round-off.
+    int cellSizeX = m_systemSize.x()/m_rCutOff + 3;
+    int cellSizeY = m_systemSize.y()/m_rCutOff + 3;
+    int cellSizeZ = m_systemSize.z()/m_rCutOff + 3;
+
+    m_cellLists.resize(cellSizeX*cellSizeY*cellSizeZ);
+
+    auto handleAtom = [&](AtomBlock &block, int i) {
+        int cellX = block.position.x[i]/m_rCutOff+1;
+        int cellY = block.position.y[i]/m_rCutOff+1;
+        int cellZ = block.position.z[i]/m_rCutOff+1;
+        //std::cout << "x=" << block.position.x[i] << " y=" << block.position.y[i] << " z=" << block.position.z[i] << std::endl;
+        //std::cout << "x=" << cellX << " y=" << cellY << " z=" << cellZ << std::endl;
+        int index = cellX + cellY*cellSizeX + cellZ*cellSizeX*cellSizeY;
+        auto &blocks = m_cellLists[index];
+        AtomRef ref;
+        ref.block = &block;
+        ref.idx = i;
+        blocks.push_back(ref);
+    };
+
+    for_each(handleAtom);
+
+    for (auto &block : m_ghostBlocks) {
+        for (int i = 0; i < block.counter; i++) {
+            handleAtom(block, i);
+        }
+    }
+
+    CPElapsedTimer::getInstance().updateCellList().stop();
+}
+
+void System::buildNeighbourLists()
+{
+    CPElapsedTimer::updateNeighborList().start();
+
+    int cellSizeX = m_systemSize.x()/m_rCutOff + 3;
+    int cellSizeY = m_systemSize.y()/m_rCutOff + 3;
+    int cellSizeZ = m_systemSize.z()/m_rCutOff + 3;
+
+    float cutOff2 = m_rCutOff*m_rCutOff;
+
+    for (auto &block : m_atomBlocks) {
+        block.clearNeighbours();
+    }
+
+    for (auto &block : m_ghostBlocks) {
+        block.clearNeighbours();
+    }
+
+    for (int cellX = 1; cellX < cellSizeX - 1; cellX++)
+    for (int cellY = 1; cellY < cellSizeY - 1; cellY++)
+    for (int cellZ = 1; cellZ < cellSizeZ - 1; cellZ++) {
+        int cellIndex = cellX + cellY*cellSizeX + cellZ*cellSizeX*cellSizeY;
+        auto &refs = m_cellLists[cellIndex];
+        for (auto &ref : refs) {
+            long id = ref.block - &m_atomBlocks[0];
+            //std::cout << "cell x=" << cellX << " y=" << cellY << " z=" << cellZ << ". block id=" << id << std::endl;
+        }
+
+        auto ref1 = &refs[0];
+        auto ref1end = ref1 + refs.size();
+
+        for (; ref1 != ref1end; ref1++) {
+            for (int cdx = -1; cdx <= 1; cdx++)
+            for (int cdy = -1; cdy <= 1; cdy++)
+            for (int cdz = -1; cdz <= 1; cdz++) {
+                AtomRef *ref2, *ref2end;
+
+                int otherCellIndex = (cellX+cdx) + (cellY+cdy)*cellSizeX + (cellZ+cdz)*cellSizeX*cellSizeY;
+                auto &otherRefs = m_cellLists[otherCellIndex];
+                ref2 = &otherRefs[0];
+                ref2end = ref2 + otherRefs.size();
+
+                for (; ref2 != ref2end; ref2++) {
+                    if (ref1->block >= ref2->block)
+                        continue;
+
+                    float x1 = ref1->block->position.x[ref1->idx];
+                    float y1 = ref1->block->position.y[ref1->idx];
+                    float z1 = ref1->block->position.z[ref1->idx];
+
+                    float x2 = ref2->block->position.x[ref2->idx];
+                    float y2 = ref2->block->position.y[ref2->idx];
+                    float z2 = ref2->block->position.z[ref2->idx];
+
+                    float dx = x1 - x2;
+                    float dy = y1 - y2;
+                    float dz = z1 - z2;
+
+                    float dr2 = dx*dx + dy*dy + dz*dz;
+                    if (dr2 < cutOff2) {
+                        ref1->block->addNeighbour(ref2->block);
+                    }
+                }
+            }
+        }
+    }
+
+    CPElapsedTimer::updateNeighborList().stop();
 }
 
 void System::step(double dt) {
