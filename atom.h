@@ -22,7 +22,7 @@ struct AtomVec {
 enum class AtomBlockType { REAL, GHOST };
 
 struct AtomBlock {
-    short counter = 0;
+    short count = 0;
     AtomBlockType type = AtomBlockType::REAL;
     AtomVec position;
     AtomVec force;

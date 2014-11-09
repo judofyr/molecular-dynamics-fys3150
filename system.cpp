@@ -35,7 +35,7 @@ void System::removeMomentum() {
     vec3 netMomentum;
     int atomCount = 0;
     for (AtomBlock &block : m_atomBlocks) {
-        for (int i = 0; i < ATOMBLOCKSIZE; i++) {
+        for (int i = 0; i < block.count; i++) {
             // TODO: Don't convert to vec3
             vec3 vel = block.velocity->vec3(i);
             netMomentum.addAndMultiply(vel, m_atom->mass());
@@ -47,7 +47,7 @@ void System::removeMomentum() {
     vec3 perMomentum = netMomentum / atomCount;
 
     for (AtomBlock &block : m_atomBlocks) {
-        for (int i = 0; i < ATOMBLOCKSIZE; i++) {
+        for (int i = 0; i < block.count; i++) {
             block.velocity->x[i] += perMomentum.x() / m_atom->mass();
             block.velocity->y[i] += perMomentum.y() / m_atom->mass();
             block.velocity->z[i] += perMomentum.z() / m_atom->mass();
@@ -57,7 +57,7 @@ void System::removeMomentum() {
 
 void System::resetForcesOnAllAtoms() {
     for (AtomBlock &block : m_atomBlocks) {
-        for (int i = 0; i < ATOMBLOCKSIZE; i++) {
+        for (int i = 0; i < block.count; i++) {
             block.force.x[i] = 0;
             block.force.y[i] = 0;
             block.force.z[i] = 0;
@@ -67,14 +67,14 @@ void System::resetForcesOnAllAtoms() {
 
 void System::addAtom(double x, double y, double z) {
     AtomBlock *block = &m_atomBlocks.back();
-    if (block->counter == ATOMBLOCKSIZE) {
+    if (block->count == ATOMBLOCKSIZE) {
         // This block is full. Create a new block.
         createBlock();
         block = &m_atomBlocks.back();
     }
 
     // Current position in block
-    int i = block->counter++;
+    int i = block->count++;
     block->position.x[i] = x;
     block->position.y[i] = y;
     block->position.z[i] = z;
@@ -89,7 +89,6 @@ void System::addAtom(double x, double y, double z) {
 
 void System::createFCCLattice(int numberOfUnitCellsEachDimension, double latticeConstant) {
     int atomCount = numberOfUnitCellsEachDimension*numberOfUnitCellsEachDimension*numberOfUnitCellsEachDimension*4;
-    assert(atomCount % ATOMBLOCKSIZE == 0 && "Atoms should be multiple of blocksize");
 
     int requiredBlocks = atomCount / ATOMBLOCKSIZE + 1;
     m_velocities.reserve(requiredBlocks);
@@ -133,13 +132,13 @@ void System::applyPeriodicGhostBlocks()
             }
 
             if (isGhost) {
-                if (ghostBlock.counter == ATOMBLOCKSIZE) {
+                if (ghostBlock.count == ATOMBLOCKSIZE) {
                     m_ghostBlocks.push_back(ghostBlock);
                     // Reset our version
-                    ghostBlock.counter = 0;
+                    ghostBlock.count = 0;
                 }
 
-                int gi = ghostBlock.counter++;
+                int gi = ghostBlock.count++;
 
                 // Copy the atom position
                 ghostBlock.position.x[gi] = block.position.x[i];
@@ -157,7 +156,7 @@ void System::applyPeriodicGhostBlocks()
         AtomBlock currentGhostBlock = ghostBlock;
 
         // Move the current ghost block we're working on
-        for (int i = 0; i < currentGhostBlock.counter; i++) {
+        for (int i = 0; i < currentGhostBlock.count; i++) {
             handleAtom(currentGhostBlock, i);
         }
 
@@ -259,7 +258,7 @@ void System::buildCellLists()
     for_each(handleAtom);
 
     for (auto &block : m_ghostBlocks) {
-        for (int i = 0; i < block.counter; i++) {
+        for (int i = 0; i < block.count; i++) {
             handleAtom(block, i);
         }
     }
@@ -346,7 +345,7 @@ void System::step(double dt) {
 void System::for_each(std::function<void (AtomBlock &, int)> action)
 {
     for (auto &block : m_atomBlocks) {
-        for (int i = 0; i < ATOMBLOCKSIZE; i++) {
+        for (int i = 0; i < block.count; i++) {
             action(block, i);
         }
     }

@@ -60,16 +60,15 @@ void LennardJones::calculateForces(System *system)
 
 #ifdef NEIGHBOURS
     for (auto &block : system->m_atomBlocks) {
-        for (int i = 0; i < ATOMBLOCKSIZE; i++) {
-            for (int j = i+1; j < ATOMBLOCKSIZE; j++) {
+        for (int i = 0; i < block.count; i++) {
+            for (int j = i+1; j < block.count; j++) {
                 calculateForce(block, i, block, j);
             }
         }
 
         block.each_neighbour([&](AtomBlock *otherBlock) {
-            for (int i = 0; i < ATOMBLOCKSIZE; i++) {
-                int otherBlockSize = (otherBlock->type == AtomBlockType::GHOST) ? otherBlock->counter : ATOMBLOCKSIZE;
-                for (int j = 0; j < otherBlockSize; j++) {
+            for (int i = 0; i < block.count; i++) {
+                for (int j = 0; j < otherBlock->count; j++) {
                     calculateForce(block, i, *otherBlock, j);
                 }
             }
@@ -83,13 +82,13 @@ void LennardJones::calculateForces(System *system)
 
     // Go over each atom
     for (auto block = blocks.begin(); block != endBlock; block++) {
-        for (int i = 0; i < ATOMBLOCKSIZE; i++) {
+        for (int i = 0; i < block.count; i++) {
             // Compare against the other atoms
             auto otherBlock = block;
             int j = i+1;
 
             while (true) {
-                if (j == ATOMBLOCKSIZE) {
+                if (j == otherBlock.count) {
                     otherBlock++;
                     if (otherBlock == endBlock)
                         break;

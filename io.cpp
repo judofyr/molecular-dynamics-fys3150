@@ -39,7 +39,7 @@ void IO::saveState(System *system, bool withGhosts)
 
     if (withGhosts) {
         for (auto &block : system->m_ghostBlocks) {
-            count += block.counter;
+            count += block.count;
         }
     }
 
@@ -55,7 +55,7 @@ void IO::saveState(System *system, bool withGhosts)
     if (!withGhosts) return;
 
     for (auto &block : system->m_ghostBlocks) {
-        for (int i = 0; i < block.counter; i++) {
+        for (int i = 0; i < block.count; i++) {
             float x = block.position.x[i];
             float y = block.position.y[i];
             float z = block.position.z[i];
