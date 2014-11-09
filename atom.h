@@ -7,7 +7,6 @@
 using CompPhys::vec3;
 
 #define ATOMBLOCKSIZE 16
-#define ATOMBLOCKNEIGHBOURINLINE 32
 
 struct AtomVec {
     float x[ATOMBLOCKSIZE];
@@ -24,51 +23,32 @@ enum class AtomBlockType { REAL, GHOST };
 
 struct AtomBlock {
     short counter = 0;
-    short inlineNeighbourCount = 0;
     AtomBlockType type = AtomBlockType::REAL;
     AtomVec position;
     AtomVec force;
     AtomVec *velocity;
-    AtomBlock *neighbours[ATOMBLOCKNEIGHBOURINLINE];
-    std::vector<AtomBlock *> moreNeighbours;
+    std::vector<AtomBlock *> neighbours;
 
     void addNeighbour(AtomBlock *block) {
-        for (int i = 0; i < inlineNeighbourCount; i++) {
-            if (neighbours[i] == block) {
-                // Found it inline
-                return;
-            }
-        }
-
-        if (inlineNeighbourCount < ATOMBLOCKNEIGHBOURINLINE) {
-            neighbours[inlineNeighbourCount++] = block;
-            return;
-        }
-
-        for (auto &otherBlock : moreNeighbours) {
+        for (auto &otherBlock : neighbours) {
             if (block == otherBlock) {
                 return;
             }
         }
 
-        moreNeighbours.push_back(block);
+        neighbours.push_back(block);
     }
 
     void clearNeighbours() {
-        inlineNeighbourCount = 0;
-        moreNeighbours.clear();
+        neighbours.clear();
     }
 
     short neighbourCount() {
-        return inlineNeighbourCount + moreNeighbours.size();
+        return neighbours.size();
     }
 
     void each_neighbour(std::function<void(AtomBlock *block)> action) {
-        for (int i = 0; i < inlineNeighbourCount; i++) {
-            action(neighbours[i]);
-        }
-
-        for (auto &block : moreNeighbours) {
+        for (auto &block : neighbours) {
             action(block);
         }
     }
