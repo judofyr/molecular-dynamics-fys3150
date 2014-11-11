@@ -32,6 +32,7 @@ int main()
     int numCells = 8;
     system.setSystemSize(UnitConverter::lengthFromAngstroms(vec3(b*numCells, b*numCells, b*numCells)));
     system.setRCutOff(2.5*sigma); // 2.5 * sigma is the case where the force is tiny
+    system.setRShell(2.8*sigma);
     system.setAtom(atom);
     system.createFCCLattice(numCells, UnitConverter::lengthFromAngstroms(b));
     system.setPotential(new LennardJones(sigma, 1.0)); // You must insert correct parameters here

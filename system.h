@@ -14,10 +14,12 @@ private:
     vec3 m_systemSize;
     Atom *m_atom;
     vector<AtomVec> m_velocities;
+    vector<AtomRef> m_ghostedAtoms;
     vector<vector<AtomRef>> m_cellLists;
     Potential *m_potential;
     Integrator *m_integrator;
     double m_rCutOff;
+    double m_rShell;
     double m_currentTime;
     int m_steps;
     void createBlock();
@@ -40,6 +42,7 @@ public:
     void buildNeighbourLists();
     void step(double dt);
     void for_each(std::function<void(AtomBlock &block, int atomIdx)>);
+    void for_each_ghost(std::function<void(AtomBlock &block, int atomIdx, AtomRef &ref)>);
 
     // Setters and getters
     vec3 systemSize() { return m_systemSize; }
@@ -57,6 +60,9 @@ public:
 
     double rCutOff() const { return m_rCutOff; }
     void setRCutOff(double rCutOff) { m_rCutOff = rCutOff; }
+
+    double rShell() const { return m_rShell; }
+    void setRShell(double rShell) { m_rShell = rShell; }
 
 private:
     void addAtom(double x, double y, double z);

@@ -36,11 +36,19 @@ void VelocityVerlet::halfKick(System *system, double dt)
 void VelocityVerlet::move(System *system, double dt)
 {
     CPElapsedTimer::getInstance().move().start();
+
     system->for_each([dt](AtomBlock &block, int i) {
         block.position.x[i] += block.velocity->x[i] * dt;
         block.position.y[i] += block.velocity->y[i] * dt;
         block.position.z[i] += block.velocity->z[i] * dt;
     });
+
+    system->for_each_ghost([dt](AtomBlock &block, int i, AtomRef &ref) {
+        block.position.x[i] += ref.block->velocity->x[ref.idx] * dt;
+        block.position.y[i] += ref.block->velocity->y[ref.idx] * dt;
+        block.position.z[i] += ref.block->velocity->z[ref.idx] * dt;
+    });
+
     CPElapsedTimer::getInstance().move().stop();
 }
 

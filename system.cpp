@@ -114,7 +114,10 @@ void System::applyPeriodicGhostBlocks()
     CPElapsedTimer::getInstance().createGhosts().start();
     AtomBlock ghostBlock;
     ghostBlock.type = AtomBlockType::GHOST;
+    AtomRef ref;
+    AtomRef *refPtr = NULL;
 
+    m_ghostedAtoms.clear();
     m_ghostBlocks.clear();
 
     for (int dim = 0; dim < 3; dim++) {
@@ -123,15 +126,24 @@ void System::applyPeriodicGhostBlocks()
             float pos = posArray[i];
             bool isGhost = false;
 
-            if (pos < m_rCutOff) {
+            if (pos < m_rShell) {
                 pos += m_systemSize[dim];
                 isGhost = true;
-            } else if (pos >= m_systemSize[dim] - m_rCutOff) {
+            } else if (pos >= m_systemSize[dim] - m_rShell) {
                 pos -= m_systemSize[dim];
                 isGhost = true;
             }
 
             if (isGhost) {
+                // Store reference to the original atom
+                if (refPtr) {
+                    ref = *refPtr;
+                } else {
+                    ref.block = &block;
+                    ref.idx = i;
+                }
+                m_ghostedAtoms.push_back(ref);
+
                 if (ghostBlock.count == ATOMBLOCKSIZE) {
                     m_ghostBlocks.push_back(ghostBlock);
                     // Reset our version
@@ -139,6 +151,7 @@ void System::applyPeriodicGhostBlocks()
                 }
 
                 int gi = ghostBlock.count++;
+
 
                 // Copy the atom position
                 ghostBlock.position.x[gi] = block.position.x[i];
@@ -154,20 +167,26 @@ void System::applyPeriodicGhostBlocks()
         // Figure out how far into the ghost blocks we are
         size_t ghostCount = m_ghostBlocks.size();
         AtomBlock currentGhostBlock = ghostBlock;
-
-        // Move the current ghost block we're working on
-        for (int i = 0; i < currentGhostBlock.count; i++) {
-            handleAtom(currentGhostBlock, i);
-        }
+        int refI = 0;
 
         // Move over the other ghost blocks
         for (size_t blockIdx = 0; blockIdx < ghostCount; blockIdx++) {
             for (int i = 0; i < ATOMBLOCKSIZE; i++) {
+                refPtr = &m_ghostedAtoms[refI];
                 handleAtom(m_ghostBlocks[blockIdx], i);
+                refI++;
             }
         }
 
+        // Move the current ghost block we're working on
+        for (int i = 0; i < currentGhostBlock.count; i++) {
+            refPtr = &m_ghostedAtoms[refI];
+            handleAtom(currentGhostBlock, i);
+            refI++;
+        }
+
         // Move over all regular atoms
+        refPtr = NULL;
         for_each(handleAtom);
     }
 
@@ -220,10 +239,14 @@ size_t System::atomCount()
 }
 
 void System::calculateForces() {
-    applyPeriodicBoundaryConditions();
-    applyPeriodicGhostBlocks();
-    buildCellLists();
-    buildNeighbourLists();
+
+    if (m_steps % 10 == 0) {
+        applyPeriodicBoundaryConditions();
+        applyPeriodicGhostBlocks();
+        buildCellLists();
+        buildNeighbourLists();
+    }
+
     resetForcesOnAllAtoms();
     m_potential->calculateForces(this);
 }
@@ -235,16 +258,16 @@ void System::buildCellLists()
     m_cellLists.clear();
 
     // We add 3 extra cells in each dimension: one for each side, and one for round-off.
-    int cellSizeX = m_systemSize.x()/m_rCutOff + 3;
-    int cellSizeY = m_systemSize.y()/m_rCutOff + 3;
-    int cellSizeZ = m_systemSize.z()/m_rCutOff + 3;
+    int cellSizeX = m_systemSize.x()/m_rShell + 3;
+    int cellSizeY = m_systemSize.y()/m_rShell + 3;
+    int cellSizeZ = m_systemSize.z()/m_rShell + 3;
 
     m_cellLists.resize(cellSizeX*cellSizeY*cellSizeZ);
 
     auto handleAtom = [&](AtomBlock &block, int i) {
-        int cellX = block.position.x[i]/m_rCutOff+1;
-        int cellY = block.position.y[i]/m_rCutOff+1;
-        int cellZ = block.position.z[i]/m_rCutOff+1;
+        int cellX = block.position.x[i]/m_rShell+1;
+        int cellY = block.position.y[i]/m_rShell+1;
+        int cellZ = block.position.z[i]/m_rShell+1;
         //std::cout << "x=" << block.position.x[i] << " y=" << block.position.y[i] << " z=" << block.position.z[i] << std::endl;
         //std::cout << "x=" << cellX << " y=" << cellY << " z=" << cellZ << std::endl;
         int index = cellX + cellY*cellSizeX + cellZ*cellSizeX*cellSizeY;
@@ -270,11 +293,11 @@ void System::buildNeighbourLists()
 {
     CPElapsedTimer::updateNeighborList().start();
 
-    int cellSizeX = m_systemSize.x()/m_rCutOff + 3;
-    int cellSizeY = m_systemSize.y()/m_rCutOff + 3;
-    int cellSizeZ = m_systemSize.z()/m_rCutOff + 3;
+    int cellSizeX = m_systemSize.x()/m_rShell + 3;
+    int cellSizeY = m_systemSize.y()/m_rShell + 3;
+    int cellSizeZ = m_systemSize.z()/m_rShell + 3;
 
-    float cutOff2 = m_rCutOff*m_rCutOff;
+    float cutOff2 = m_rShell*m_rShell;
 
     for (auto &block : m_atomBlocks) {
         block.clearNeighbours();
@@ -347,6 +370,17 @@ void System::for_each(std::function<void (AtomBlock &, int)> action)
     for (auto &block : m_atomBlocks) {
         for (int i = 0; i < block.count; i++) {
             action(block, i);
+        }
+    }
+}
+
+void System::for_each_ghost(std::function<void (AtomBlock &, int, AtomRef &)> action)
+{
+    auto origRef = m_ghostedAtoms.begin();
+    for (auto &block : m_ghostBlocks) {
+        for (int i = 0; i < block.count; i++) {
+            action(block, i, *origRef);
+            origRef++;
         }
     }
 }
