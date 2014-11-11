@@ -175,6 +175,7 @@ void System::applyPeriodicGhostBlocks()
         for (size_t blockIdx = 0; blockIdx < ghostCount; blockIdx++) {
             for (int i = 0; i < ATOMBLOCKSIZE; i++) {
                 refPtr = &m_ghostedAtoms[refI];
+                m_ghostBlocks.reserve(m_ghostBlocks.size() + 1);
                 handleAtom(m_ghostBlocks[blockIdx], i);
                 refI++;
             }
