@@ -268,8 +268,6 @@ void System::buildCellLists()
         int cellX = block.position.x[i]/m_rShell+1;
         int cellY = block.position.y[i]/m_rShell+1;
         int cellZ = block.position.z[i]/m_rShell+1;
-        //std::cout << "x=" << block.position.x[i] << " y=" << block.position.y[i] << " z=" << block.position.z[i] << std::endl;
-        //std::cout << "x=" << cellX << " y=" << cellY << " z=" << cellZ << std::endl;
         int index = cellX + cellY*cellSizeX + cellZ*cellSizeX*cellSizeY;
         auto &blocks = m_cellLists[index];
         AtomRef ref;
@@ -312,10 +310,6 @@ void System::buildNeighbourLists()
     for (int cellZ = 1; cellZ < cellSizeZ - 1; cellZ++) {
         int cellIndex = cellX + cellY*cellSizeX + cellZ*cellSizeX*cellSizeY;
         auto &refs = m_cellLists[cellIndex];
-        for (auto &ref : refs) {
-            long id = ref.block - &m_atomBlocks[0];
-            //std::cout << "cell x=" << cellX << " y=" << cellY << " z=" << cellZ << ". block id=" << id << std::endl;
-        }
 
         auto ref1 = &refs[0];
         auto ref1end = ref1 + refs.size();
