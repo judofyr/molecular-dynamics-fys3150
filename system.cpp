@@ -31,26 +31,28 @@ System::~System()
 }
 
 void System::removeMomentum() {
-    // TODO: Why do we even first multiply by mass, and then divide by mass?
-    vec3 netMomentum;
+    // We'd like to remove momentum, but because we only work with a single type
+    // of atom we can just remove net velocity.
+
+    vec3 netVel;
     int atomCount = 0;
     for (AtomBlock &block : m_atomBlocks) {
         for (int i = 0; i < block.count; i++) {
             // TODO: Don't convert to vec3
             vec3 vel = block.velocity->vec3(i);
-            netMomentum.addAndMultiply(vel, m_atom->mass());
+            netVel.add(vel);
             atomCount++;
         }
     }
 
     // We want to remove this much momentum from each atom
-    vec3 perMomentum = netMomentum / atomCount;
+    vec3 perVel = netVel / atomCount;
 
     for (AtomBlock &block : m_atomBlocks) {
         for (int i = 0; i < block.count; i++) {
-            block.velocity->x[i] += perMomentum.x() / m_atom->mass();
-            block.velocity->y[i] += perMomentum.y() / m_atom->mass();
-            block.velocity->z[i] += perMomentum.z() / m_atom->mass();
+            block.velocity->x[i] += perVel.x();
+            block.velocity->y[i] += perVel.y();
+            block.velocity->z[i] += perVel.z();
         }
     }
 }
