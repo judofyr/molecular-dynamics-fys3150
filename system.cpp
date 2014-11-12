@@ -69,7 +69,7 @@ void System::resetForcesOnAllAtoms() {
 
 void System::addAtom(double x, double y, double z) {
     AtomBlock *block = &m_atomBlocks.back();
-    if (block->count == ATOMBLOCKSIZE) {
+    if (block->count == MD_BLOCKSIZE) {
         // This block is full. Create a new block.
         createBlock();
         block = &m_atomBlocks.back();
@@ -92,7 +92,7 @@ void System::addAtom(double x, double y, double z) {
 void System::createFCCLattice(int numberOfUnitCellsEachDimension, double latticeConstant) {
     int atomCount = numberOfUnitCellsEachDimension*numberOfUnitCellsEachDimension*numberOfUnitCellsEachDimension*4;
 
-    int requiredBlocks = atomCount / ATOMBLOCKSIZE + 1;
+    int requiredBlocks = atomCount / MD_BLOCKSIZE + 1;
     m_velocities.reserve(requiredBlocks);
     m_atomBlocks.reserve(requiredBlocks);
 
@@ -124,7 +124,7 @@ void System::applyPeriodicGhostBlocks()
 
     for (int dim = 0; dim < 3; dim++) {
         auto handleAtom = [&](AtomBlock &block, int i){
-            float *posArray = block.position.x + ATOMBLOCKSIZE*dim;
+            float *posArray = block.position.x + MD_BLOCKSIZE*dim;
             float pos = posArray[i];
             bool isGhost = false;
 
@@ -146,7 +146,7 @@ void System::applyPeriodicGhostBlocks()
                 }
                 m_ghostedAtoms.push_back(ref);
 
-                if (ghostBlock.count == ATOMBLOCKSIZE) {
+                if (ghostBlock.count == MD_BLOCKSIZE) {
                     m_ghostBlocks.push_back(ghostBlock);
                     // Reset our version
                     ghostBlock.count = 0;
@@ -161,7 +161,7 @@ void System::applyPeriodicGhostBlocks()
                 ghostBlock.position.z[gi] = block.position.z[i];
 
                 // Override the current dimension
-                float *ghostPosArray = ghostBlock.position.x + ATOMBLOCKSIZE*dim;
+                float *ghostPosArray = ghostBlock.position.x + MD_BLOCKSIZE*dim;
                 ghostPosArray[gi] = pos;
             }
         };
@@ -173,7 +173,7 @@ void System::applyPeriodicGhostBlocks()
 
         // Move over the other ghost blocks
         for (size_t blockIdx = 0; blockIdx < ghostCount; blockIdx++) {
-            for (int i = 0; i < ATOMBLOCKSIZE; i++) {
+            for (int i = 0; i < MD_BLOCKSIZE; i++) {
                 refPtr = &m_ghostedAtoms[refI];
                 m_ghostBlocks.reserve(m_ghostBlocks.size() + 1);
                 handleAtom(m_ghostBlocks[blockIdx], i);
@@ -238,7 +238,7 @@ void System::applyPeriodicBoundaryConditions()
 
 size_t System::atomCount()
 {
-    return m_atomBlocks.size() * ATOMBLOCKSIZE;
+    return m_atomBlocks.size() * MD_BLOCKSIZE;
 }
 
 void System::calculateForces() {
@@ -246,8 +246,10 @@ void System::calculateForces() {
     if (m_steps % 10 == 0) {
         applyPeriodicBoundaryConditions();
         applyPeriodicGhostBlocks();
+#if MD_NEIGHBOURS
         buildCellLists();
         buildNeighbourLists();
+#endif
     }
 
     resetForcesOnAllAtoms();

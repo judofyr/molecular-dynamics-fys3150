@@ -1,4 +1,5 @@
 #pragma once
+#include <config.h>
 #include <math/vec3.h>
 #include <vector>
 #include <functional>
@@ -6,12 +7,10 @@
 
 using CompPhys::vec3;
 
-#define ATOMBLOCKSIZE 16
-
 struct AtomVec {
-    float x[ATOMBLOCKSIZE];
-    float y[ATOMBLOCKSIZE];
-    float z[ATOMBLOCKSIZE];
+    float x[MD_BLOCKSIZE];
+    float y[MD_BLOCKSIZE];
+    float z[MD_BLOCKSIZE];
 
     CompPhys::vec3 vec3(int i) {
         CompPhys::vec3 vec(x[i], y[i], z[i]);

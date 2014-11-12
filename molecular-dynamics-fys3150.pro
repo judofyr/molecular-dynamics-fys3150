@@ -37,5 +37,6 @@ HEADERS += \
     unitconverter.h \
     thermostats/thermostat.h \
     thermostats/berendsenthermostat.h \
-    cpelapsedtimer.h
+    cpelapsedtimer.h \
+    config.h
 

@@ -1,3 +1,4 @@
+#include <config.h>
 #include <iostream>
 #include <math/random.h>
 
@@ -52,16 +53,22 @@ int main()
         // movie->saveState(&system, false);
 
         if(!(timestep % 10)) {
+#if MD_SAMPLE
             statisticsSampler->sample(&system, dt);
             double energy = system.potential()->potentialEnergy() + statisticsSampler->kineticEnergy();
             double temp = statisticsSampler->instantaneousTemperature();
             cout << "step=" << timestep << " energy=" << energy << " temp=" << UnitConverter::temperatureToSI(temp) << endl;
+#else
+            cout << "step=" << timestep << endl;
+#endif
 
+#if MD_NEIGHBOURS
             int neighbourCount = 0;
             for (auto &block : system.m_atomBlocks) {
                 neighbourCount += block.neighbourCount();
             }
             cout << "neighbours=" << neighbourCount << endl;
+#endif
         }
 
         if (timestep > 200 && timestep < 400) {
@@ -97,7 +104,7 @@ int main()
          // << "      Sampling          : " << CPElapsedTimer::sampling().elapsedTime() << " s ( " << 100*samplingFraction << "%)" <<  endl;
     cout << endl << numTimeSteps / CPElapsedTimer::totalTime() << " timesteps / second. " << endl;
     cout << system.atomCount()*numTimeSteps / (1000*CPElapsedTimer::totalTime()) << "k atom-timesteps / second. " << endl;
-    cout << (system.atomCount() + system.m_ghostBlocks.size()*ATOMBLOCKSIZE) *numTimeSteps / (1000*CPElapsedTimer::totalTime()) << "k atom-timesteps / second (including ghosts). " << endl;
+    cout << (system.atomCount() + system.m_ghostBlocks.size()*MD_BLOCKSIZE) *numTimeSteps / (1000*CPElapsedTimer::totalTime()) << "k atom-timesteps / second (including ghosts). " << endl;
 
     return 0;
 }

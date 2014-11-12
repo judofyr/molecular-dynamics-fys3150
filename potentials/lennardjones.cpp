@@ -1,3 +1,4 @@
+#include <config.h>
 #include <potentials/lennardjones.h>
 #include <cmath>
 #include <cassert>
@@ -41,12 +42,14 @@ void LennardJones::calculateForces(System *system)
         float sigmaSixth = pow(m_sigma, 6.0);
         float force = -24*m_epsilon*sigmaSixth*oneOverDr6*(2*sigmaSixth*oneOverDr6 - 1)*oneOverDr2;
 
+#if MD_SAMPLE
         float oneOverDrCut2 = 1.0/rCut2;
         float oneOverDrCut6 = oneOverDrCut2*oneOverDrCut2*oneOverDrCut2;
         float potentialEnergyCutoff = 4*m_epsilon*sigmaSixth*oneOverDrCut6*(sigmaSixth*oneOverDrCut6 - 1);
         float potentialEnergy = 4*m_epsilon*sigmaSixth*oneOverDr6*(sigmaSixth*oneOverDr6 - 1) - potentialEnergyCutoff;
         if (otherBlock.type == AtomBlockType::GHOST) potentialEnergy *= 0.5;
         m_potentialEnergy += potentialEnergy;
+#endif
 
         block.force.x[i] += dx * -force;
         block.force.y[i] += dy * -force;
@@ -56,9 +59,7 @@ void LennardJones::calculateForces(System *system)
         otherBlock.force.z[j] += dz * force;
     };
 
-#define NEIGHBOURS
-
-#ifdef NEIGHBOURS
+#if MD_NEIGHBOURS
     for (auto &block : system->m_atomBlocks) {
         for (int i = 0; i < block.count; i++) {
             for (int j = i+1; j < block.count; j++) {
@@ -82,13 +83,13 @@ void LennardJones::calculateForces(System *system)
 
     // Go over each atom
     for (auto block = blocks.begin(); block != endBlock; block++) {
-        for (int i = 0; i < block.count; i++) {
+        for (int i = 0; i < block->count; i++) {
             // Compare against the other atoms
             auto otherBlock = block;
             int j = i+1;
 
             while (true) {
-                if (j == otherBlock.count) {
+                if (j == otherBlock->count) {
                     otherBlock++;
                     if (otherBlock == endBlock)
                         break;
@@ -100,7 +101,7 @@ void LennardJones::calculateForces(System *system)
 
             // Compare against all ghost atoms
             for (otherBlock = ghostBlocks.begin(); otherBlock != endGhostBlock; otherBlock++) {
-                for (int j = 0; j < otherBlock->counter; j++) {
+                for (int j = 0; j < otherBlock->count; j++) {
                     calculateForce(*block, i, *otherBlock, j);
                 }
             }
