@@ -21,6 +21,11 @@ void LennardJones::calculateForces(System *system)
     float sizeX = size.x();
     float sizeY = size.y();
     float sizeZ = size.z();
+    float halfSizeX = 0.5*sizeX;
+    float halfSizeY = 0.5*sizeY;
+    float halfSizeZ = 0.5*sizeZ;
+    float sigmaSixth = pow(m_sigma, 6.0);
+    float k = -24*m_epsilon*sigmaSixth;
 
     auto calculateForce = [&](AtomBlock &block, int i, AtomBlock &otherBlock, int j) {
         assert(block.type == AtomBlockType::REAL);
@@ -42,12 +47,12 @@ void LennardJones::calculateForces(System *system)
 
 #if MD_GHOSTS
 #else
-        if      (dx >  0.5*sizeX) dx -= sizeX;
-        else if (dx < -0.5*sizeX) dx += sizeX;
-        if      (dy >  0.5*sizeY) dy -= sizeY;
-        else if (dy < -0.5*sizeY) dy += sizeY;
-        if      (dz >  0.5*sizeZ) dz -= sizeZ;
-        else if (dz < -0.5*sizeZ) dz += sizeZ;
+        if      (dx >  halfSizeX) dx -= sizeX;
+        else if (dx < -halfSizeX) dx += sizeX;
+        if      (dy >  halfSizeY) dy -= sizeY;
+        else if (dy < -halfSizeY) dy += sizeY;
+        if      (dz >  halfSizeZ) dz -= sizeZ;
+        else if (dz < -halfSizeZ) dz += sizeZ;
 #endif
 
         float dr2 = dx*dx + dy*dy + dz*dz;
@@ -58,8 +63,7 @@ void LennardJones::calculateForces(System *system)
         float oneOverDr2 = 1.0/dr2;
         float oneOverDr6 = oneOverDr2*oneOverDr2*oneOverDr2;
 
-        float sigmaSixth = pow(m_sigma, 6.0);
-        float force = -24*m_epsilon*sigmaSixth*oneOverDr6*(2*sigmaSixth*oneOverDr6 - 1)*oneOverDr2;
+        float force = k*oneOverDr6*(2*sigmaSixth*oneOverDr6 - 1)*oneOverDr2;
 
 #if MD_SAMPLE
         float oneOverDrCut2 = 1.0/rCut2;
