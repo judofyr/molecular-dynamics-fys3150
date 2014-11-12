@@ -274,16 +274,22 @@ void System::buildCellLists()
     m_cellLists.clear();
 
     // We add 3 extra cells in each dimension: one for each side, and one for round-off.
-    int cellSizeX = m_systemSize.x()/m_rShell + 3;
-    int cellSizeY = m_systemSize.y()/m_rShell + 3;
-    int cellSizeZ = m_systemSize.z()/m_rShell + 3;
+    int cellSizeX = m_systemSize.x()/m_rShell + 2;
+    int cellSizeY = m_systemSize.y()/m_rShell + 2;
+    int cellSizeZ = m_systemSize.z()/m_rShell + 2;
+    float cellWidthX = m_systemSize.x()/(cellSizeX-2);
+    float cellWidthY = m_systemSize.y()/(cellSizeY-2);
+    float cellWidthZ = m_systemSize.z()/(cellSizeZ-2);
 
     m_cellLists.resize(cellSizeX*cellSizeY*cellSizeZ);
 
     auto handleAtom = [&](AtomBlock &block, int i) {
-        int cellX = block.position.x[i]/m_rShell+1;
-        int cellY = block.position.y[i]/m_rShell+1;
-        int cellZ = block.position.z[i]/m_rShell+1;
+        int cellX = block.position.x[i]/cellWidthX+1;
+        int cellY = block.position.y[i]/cellWidthY+1;
+        int cellZ = block.position.z[i]/cellWidthZ+1;
+        assert(cellX < cellSizeX);
+        assert(cellY < cellSizeY);
+        assert(cellZ < cellSizeZ);
         int index = cellX + cellY*cellSizeX + cellZ*cellSizeX*cellSizeY;
         auto &blocks = m_cellLists[index];
         AtomRef ref;
@@ -313,9 +319,9 @@ void System::buildNeighbourLists()
     float sizeY = m_systemSize.y();
     float sizeZ = m_systemSize.z();
 
-    int cellSizeX = sizeX/m_rShell + 3;
-    int cellSizeY = sizeY/m_rShell + 3;
-    int cellSizeZ = sizeZ/m_rShell + 3;
+    int cellSizeX = sizeX/m_rShell + 2;
+    int cellSizeY = sizeY/m_rShell + 2;
+    int cellSizeZ = sizeZ/m_rShell + 2;
 
     float cutOff2 = m_rShell*m_rShell;
 
@@ -354,6 +360,10 @@ void System::buildNeighbourLists()
                 if      (otherCellZ == 0            ) otherCellZ = cellSizeZ - 2;
                 else if (otherCellZ == cellSizeZ - 1) otherCellZ = 1;
 #endif
+
+                assert(otherCellX < cellSizeX);
+                assert(otherCellY < cellSizeY);
+                assert(otherCellZ < cellSizeZ);
 
                 int otherCellIndex = otherCellX + otherCellY*cellSizeX + otherCellZ*cellSizeX*cellSizeY;
                 auto &otherRefs = m_cellLists[otherCellIndex];
