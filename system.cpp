@@ -50,9 +50,9 @@ void System::removeMomentum() {
 
     for (AtomBlock &block : m_atomBlocks) {
         for (int i = 0; i < block.count; i++) {
-            block.velocity->x[i] += perVel.x();
-            block.velocity->y[i] += perVel.y();
-            block.velocity->z[i] += perVel.z();
+            block.velocity->x[i] -= perVel.x();
+            block.velocity->y[i] -= perVel.y();
+            block.velocity->z[i] -= perVel.z();
         }
     }
 }
