@@ -242,17 +242,26 @@ size_t System::atomCount()
 }
 
 void System::calculateForces() {
-
-    if (m_steps % 10 == 0) {
-        applyPeriodicBoundaryConditions();
 #if MD_GHOSTS
+    if (m_steps % MD_FORCE_SKIP == 0) {
+        applyPeriodicBoundaryConditions();
         applyPeriodicGhostBlocks();
-#endif
 #if MD_NEIGHBOURS
         buildCellLists();
         buildNeighbourLists();
 #endif
     }
+#else // Without  ghosts
+    applyPeriodicBoundaryConditions();
+#if MD_NEIGHBOURS
+    if (m_steps % MD_FORCE_SKIP == 0) {
+        buildCellLists();
+        buildNeighbourLists();
+    }
+#endif
+
+#endif
+
 
     resetForcesOnAllAtoms();
     m_potential->calculateForces(this);

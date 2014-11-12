@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef MD_FORCE_SKIP
+#define MD_FORCE_SKIP 10
+#endif
+
 #ifndef MD_BLOCKSIZE
 #define MD_BLOCKSIZE 16
 #endif
