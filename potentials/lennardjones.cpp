@@ -24,6 +24,10 @@ void LennardJones::calculateForces(System *system)
 
     auto calculateForce = [&](AtomBlock &block, int i, AtomBlock &otherBlock, int j) {
         assert(block.type == AtomBlockType::REAL);
+#if MD_GHOSTS
+#else
+        assert(otherBlock.type == AtomBlockType::REAL);
+#endif
         float x1 = block.position.x[i];
         float y1 = block.position.y[i];
         float z1 = block.position.z[i];
