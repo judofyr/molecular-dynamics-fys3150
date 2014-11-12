@@ -227,9 +227,9 @@ void System::applyPeriodicBoundaryConditions()
         assert(block.position.x[i] >= 0);
         assert(block.position.y[i] >= 0);
         assert(block.position.z[i] >= 0);
-        assert(block.position.x[i] < sizeX);
-        assert(block.position.y[i] < sizeY);
-        assert(block.position.z[i] < sizeZ);
+        assert(block.position.x[i] <= sizeX);
+        assert(block.position.y[i] <= sizeY);
+        assert(block.position.z[i] <= sizeZ);
 
     });
 
