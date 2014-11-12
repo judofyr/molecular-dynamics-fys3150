@@ -39,7 +39,6 @@ int main()
     system.setPotential(new LennardJones(sigma, 1.0)); // You must insert correct parameters here
     system.setIntegrator(new VelocityVerlet());
     system.removeMomentum();
-    system.applyPeriodicGhostBlocks();
 
     auto thermostat = new BerendsenThermostat(UnitConverter::temperatureFromSI(1000), dt*10);
 

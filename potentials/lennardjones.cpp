@@ -17,6 +17,11 @@ void LennardJones::calculateForces(System *system)
     m_potentialEnergy = 0;
     float rCut2 = system->rCutOff() * system->rCutOff();
 
+    auto size = system->systemSize();
+    float sizeX = size.x();
+    float sizeY = size.y();
+    float sizeZ = size.z();
+
     auto calculateForce = [&](AtomBlock &block, int i, AtomBlock &otherBlock, int j) {
         assert(block.type == AtomBlockType::REAL);
         float x1 = block.position.x[i];
@@ -30,6 +35,16 @@ void LennardJones::calculateForces(System *system)
         float dx = x1 - x2;
         float dy = y1 - y2;
         float dz = z1 - z2;
+
+#if MD_GHOSTS
+#else
+        if      (dx >  0.5*sizeX) dx -= sizeX;
+        else if (dx < -0.5*sizeX) dx += sizeX;
+        if      (dy >  0.5*sizeY) dy -= sizeY;
+        else if (dy < -0.5*sizeY) dy += sizeY;
+        if      (dz >  0.5*sizeZ) dz -= sizeZ;
+        else if (dz < -0.5*sizeZ) dz += sizeZ;
+#endif
 
         float dr2 = dx*dx + dy*dy + dz*dz;
 
@@ -99,12 +114,14 @@ void LennardJones::calculateForces(System *system)
                 j++;
             }
 
+#if MD_GHOSTS
             // Compare against all ghost atoms
             for (otherBlock = ghostBlocks.begin(); otherBlock != endGhostBlock; otherBlock++) {
                 for (int j = 0; j < otherBlock->count; j++) {
                     calculateForce(*block, i, *otherBlock, j);
                 }
             }
+#endif
         }
     }
 #endif

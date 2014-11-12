@@ -245,7 +245,9 @@ void System::calculateForces() {
 
     if (m_steps % 10 == 0) {
         applyPeriodicBoundaryConditions();
+#if MD_GHOSTS
         applyPeriodicGhostBlocks();
+#endif
 #if MD_NEIGHBOURS
         buildCellLists();
         buildNeighbourLists();
@@ -283,11 +285,13 @@ void System::buildCellLists()
 
     for_each(handleAtom);
 
+#if MD_GHOSTS
     for (auto &block : m_ghostBlocks) {
         for (int i = 0; i < block.count; i++) {
             handleAtom(block, i);
         }
     }
+#endif
 
     CPElapsedTimer::getInstance().updateCellList().stop();
 }
@@ -296,9 +300,13 @@ void System::buildNeighbourLists()
 {
     CPElapsedTimer::updateNeighborList().start();
 
-    int cellSizeX = m_systemSize.x()/m_rShell + 3;
-    int cellSizeY = m_systemSize.y()/m_rShell + 3;
-    int cellSizeZ = m_systemSize.z()/m_rShell + 3;
+    float sizeX = m_systemSize.x();
+    float sizeY = m_systemSize.y();
+    float sizeZ = m_systemSize.z();
+
+    int cellSizeX = sizeX/m_rShell + 3;
+    int cellSizeY = sizeY/m_rShell + 3;
+    int cellSizeZ = sizeZ/m_rShell + 3;
 
     float cutOff2 = m_rShell*m_rShell;
 
@@ -324,8 +332,21 @@ void System::buildNeighbourLists()
             for (int cdy = -1; cdy <= 1; cdy++)
             for (int cdz = -1; cdz <= 1; cdz++) {
                 AtomRef *ref2, *ref2end;
+                int otherCellX = cellX+cdx;
+                int otherCellY = cellY+cdy;
+                int otherCellZ = cellZ+cdz;
 
-                int otherCellIndex = (cellX+cdx) + (cellY+cdy)*cellSizeX + (cellZ+cdz)*cellSizeX*cellSizeY;
+#if MD_GHOSTS
+#else
+                if      (otherCellX == 0            ) otherCellX = cellSizeX - 2;
+                else if (otherCellX == cellSizeX - 1) otherCellX = 1;
+                if      (otherCellY == 0            ) otherCellY = cellSizeY - 2;
+                else if (otherCellY == cellSizeY - 1) otherCellY = 1;
+                if      (otherCellZ == 0            ) otherCellZ = cellSizeZ - 2;
+                else if (otherCellZ == cellSizeZ - 1) otherCellZ = 1;
+#endif
+
+                int otherCellIndex = otherCellX + otherCellY*cellSizeX + otherCellZ*cellSizeX*cellSizeY;
                 auto &otherRefs = m_cellLists[otherCellIndex];
                 ref2 = &otherRefs[0];
                 ref2end = ref2 + otherRefs.size();
@@ -345,6 +366,16 @@ void System::buildNeighbourLists()
                     float dx = x1 - x2;
                     float dy = y1 - y2;
                     float dz = z1 - z2;
+
+#if MD_GHOSTS
+#else
+                    if      (dx >  0.5*sizeX) dx -= sizeX;
+                    else if (dx < -0.5*sizeX) dx += sizeX;
+                    if      (dy >  0.5*sizeY) dy -= sizeY;
+                    else if (dy < -0.5*sizeY) dy += sizeY;
+                    if      (dz >  0.5*sizeZ) dz -= sizeZ;
+                    else if (dz < -0.5*sizeZ) dz += sizeZ;
+#endif
 
                     float dr2 = dx*dx + dy*dy + dz*dz;
                     if (dr2 < cutOff2) {

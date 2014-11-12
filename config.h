@@ -11,3 +11,7 @@
 #ifndef MD_SAMPLE
 #define MD_SAMPLE 1
 #endif
+
+#ifndef MD_GHOSTS
+#define MD_GHOSTS 1
+#endif
